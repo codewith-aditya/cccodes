@@ -373,7 +373,7 @@ async def handle_file(update: Update, context: CallbackContext) -> None:
 
 async def approve(update: Update, context: CallbackContext) -> None:
     """Approve a user for the mass command."""
-    ADMIN_IDS = [123456789]  # Replace with your admin chat IDs
+    ADMIN_IDS = [5689106127]  # Replace with your admin chat IDs
     if update.message.chat_id not in ADMIN_IDS:
         await update.message.reply_text("🚫 You are not authorized to use this command.")
         return
@@ -388,7 +388,7 @@ async def approve(update: Update, context: CallbackContext) -> None:
 
 async def unapprove(update: Update, context: CallbackContext) -> None:
     """Unapprove a user for the mass command."""
-    ADMIN_IDS = [123456789]  # Replace with your admin chat IDs
+    ADMIN_IDS = [5689106127]  # Replace with your admin chat IDs
     if update.message.chat_id not in ADMIN_IDS:
         await update.message.reply_text("🚫 You are not authorized to use this command.")
         return
