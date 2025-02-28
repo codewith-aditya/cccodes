@@ -12,7 +12,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 
 # Telegram Bot Token
-TELEGRAM_TOKEN = "7597039904:AAE1ThfpS0dHLUByaehM9EtwQ9UROQhJ3Yc"
+TELEGRAM_TOKEN = "7799708939:AAFRTgD7xkShouSmXX5RF9aFbXRcFvhq8u8"
 
 # Banner
 bannerss = """
