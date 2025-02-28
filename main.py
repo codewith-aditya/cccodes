@@ -12,7 +12,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 
 # Telegram Bot Token
-TELEGRAM_TOKEN = "7775471687:AAETfNQ6Hy--ThciY-vipnOaazZH82dfiQs"
+TELEGRAM_TOKEN = "7799708939:AAFRTgD7xkShouSmXX5RF9aFbXRcFvhq8u8"
 
 # File to store approved users
 APPROVED_USERS_FILE = "approved_users.json"
