@@ -359,7 +359,7 @@ async def chk(update: Update, context: CallbackContext) -> None:
 async def mass(update: Update, context: CallbackContext) -> None:
     chat_id = update.message.chat_id
     if not is_user_approved(chat_id):
-        await update.message.reply_text("🚫 You are not approved to use the mass command. Contact an admin to buy @@Indivual1X for access.")
+        await update.message.reply_text("🚫 You are not approved to use the mass command. Contact an admin for access.")
         return
     await update.message.reply_text("Please upload a .txt file with credit cards.")
     context.user_data['waiting_for_file'] = True
