@@ -12,7 +12,10 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackContext
 
 # Telegram Bot Token
-TELEGRAM_TOKEN = "7799708939:AAFRTgD7xkShouSmXX5RF9aFbXRcFvhq8u8"
+TELEGRAM_TOKEN = "7775471687:AAETfNQ6Hy--ThciY-vipnOaazZH82dfiQs"
+
+# File to store approved users
+APPROVED_USERS_FILE = "approved_users.json"
 
 # Banner
 bannerss = """
@@ -31,10 +34,43 @@ bannerss = """
 PAID VERSION!
 """
 
-# Required modules
-required_modules = ["requests", "bs4", "re", "json", "random", "string", "datetime"]
+# Helper functions for approved users
+def load_approved_users():
+    """Load approved users from the file."""
+    try:
+        with open(APPROVED_USERS_FILE, "r") as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
 
-# Helper functions
+def save_approved_users(approved_users):
+    """Save approved users to the file."""
+    with open(APPROVED_USERS_FILE, "w") as file:
+        json.dump(approved_users, file, indent=4)
+
+def is_user_approved(chat_id):
+    """Check if a user is approved and their approval is still valid."""
+    approved_users = load_approved_users()
+    if str(chat_id) in approved_users:
+        expiration_date = datetime.strptime(approved_users[str(chat_id)], "%Y-%m-%d")
+        return datetime.now() < expiration_date
+    return False
+
+def approve_user(chat_id, days=30):
+    """Approve a user for a specified number of days."""
+    approved_users = load_approved_users()
+    expiration_date = (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
+    approved_users[str(chat_id)] = expiration_date
+    save_approved_users(approved_users)
+
+def unapprove_user(chat_id):
+    """Remove a user from the approved list."""
+    approved_users = load_approved_users()
+    if str(chat_id) in approved_users:
+        del approved_users[str(chat_id)]
+        save_approved_users(approved_users)
+
+# Helper functions for credit card operations
 def generate_random_email(length=8, domain=None):
     common_domains = ["gmail.com"]
     if not domain:
@@ -269,9 +305,34 @@ def generate_ccs(bin):
         ccs.append(f"{cc}|{mm}|{yy}|{cvv}")
     return ccs
 
+# Function to check VBV status
+def check_vbv(card_number):
+    # Simulate a VBV check
+    # In a real-world scenario, this would involve interacting with a payment gateway
+    # For demonstration purposes, we'll assume that cards ending with even numbers are enrolled in VBV
+    last_digit = int(card_number[-1])
+    if last_digit % 2 == 0:
+        return "VBV Enrolled ✅"
+    else:
+        return "VBV Not Enrolled ❌"
+
 # Telegram Bot Handlers
 async def start(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text('Welcome to the CC Checker Bot! Use /chk to check a single card or /mass to check multiple cards from a file.')
+    await update.message.reply_text('Welcome to the Ultimate CC Checker Bot!
+
+✨ Features:
+• Check a single card using /chk <CC|MM|YY|CVV>
+• Generate 10 random cards with /gen <6-digit BIN>
+• Mass check multiple cards (approved users only) with /mass
+• VBV Check using /vbv <CC|MM|YY|CVV>
+
+🔒 Mass Command Access:
+Only approved users can access the mass checking feature.
+
+💡 Admin Commands:
+Use /approve <chatid> [days] and /unapprove <chatid> to manage approvals.
+
+Enjoy using the bot and happy checking! 🚀')
 
 async def chk(update: Update, context: CallbackContext) -> None:
     cc = update.message.text.split(' ')[1]
@@ -286,6 +347,10 @@ async def chk(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text("Failed to create session.")
 
 async def mass(update: Update, context: CallbackContext) -> None:
+    chat_id = update.message.chat_id
+    if not is_user_approved(chat_id):
+        await update.message.reply_text("🚫 You are not approved to use the mass command. Contact an admin for access.")
+        return
     await update.message.reply_text("Please upload a .txt file with credit cards.")
     context.user_data['waiting_for_file'] = True
 
@@ -306,8 +371,61 @@ async def handle_file(update: Update, context: CallbackContext) -> None:
             await update.message.reply_text("Failed to create session.")
         context.user_data['waiting_for_file'] = False
 
-# Handler for /gen command
+async def approve(update: Update, context: CallbackContext) -> None:
+    """Approve a user for the mass command."""
+    ADMIN_IDS = [123456789]  # Replace with your admin chat IDs
+    if update.message.chat_id not in ADMIN_IDS:
+        await update.message.reply_text("🚫 You are not authorized to use this command.")
+        return
+
+    try:
+        chat_id = int(context.args[0])
+        days = int(context.args[1]) if len(context.args) > 1 else 30  # Default to 30 days
+        approve_user(chat_id, days)
+        await update.message.reply_text(f"✅ User {chat_id} has been approved for {days} days.")
+    except (IndexError, ValueError):
+        await update.message.reply_text("Usage: /approve <chat_id> [days]")
+
+async def unapprove(update: Update, context: CallbackContext) -> None:
+    """Unapprove a user for the mass command."""
+    ADMIN_IDS = [123456789]  # Replace with your admin chat IDs
+    if update.message.chat_id not in ADMIN_IDS:
+        await update.message.reply_text("🚫 You are not authorized to use this command.")
+        return
+
+    try:
+        chat_id = int(context.args[0])
+        unapprove_user(chat_id)
+        await update.message.reply_text(f"✅ User {chat_id} has been unapproved.")
+    except (IndexError, ValueError):
+        await update.message.reply_text("Usage: /unapprove <chat_id>")
+
+async def vbv(update: Update, context: CallbackContext) -> None:
+    """Check if a card is enrolled in VBV."""
+    try:
+        cc = update.message.text.split(' ')[1]
+        card_details = cc.split('|')
+        if len(card_details) != 4:
+            await update.message.reply_text("Invalid format. Please use /vbv <CC|MM|YY|CVV>")
+            return
+        
+        card_number = card_details[0]
+        vbv_status = check_vbv(card_number)
+        
+        response = f"""
+━━━━━━━━━━━━━━━━━━
+
+𝗖𝗮𝗿𝗱 - {cc}  
+𝐕𝐁𝐕 𝐒𝐭𝐚𝐭𝐮𝐬 - {vbv_status}  
+
+━━━━━━━━━━━━━━━━━━
+"""
+        await update.message.reply_text(response)
+    except IndexError:
+        await update.message.reply_text("Please provide card details. Usage: /vbv <CC|MM|YY|CVV>")
+
 async def gen(update: Update, context: CallbackContext) -> None:
+    """Generate valid credit card numbers."""
     try:
         bin = update.message.text.split(' ')[1]
         if len(bin) != 6 or not bin.isdigit():
@@ -336,7 +454,10 @@ def main() -> None:
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("chk", chk))
     application.add_handler(CommandHandler("mass", mass))
-    application.add_handler(CommandHandler("gen", gen))
+    application.add_handler(CommandHandler("approve", approve))
+    application.add_handler(CommandHandler("unapprove", unapprove))
+    application.add_handler(CommandHandler("vbv", vbv))
+    application.add_handler(CommandHandler("gen", gen))  # Add this line
     application.add_handler(MessageHandler(filters.Document.ALL, handle_file))
 
     application.run_polling()
