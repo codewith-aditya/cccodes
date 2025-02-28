@@ -3,3 +3,6 @@ beautifulsoup4==4.12.2
 python-telegram-bot==20.3
 lxml==4.9.3
 bs4
+Flask==2.2.2
+gunicorn==20.1.0
+aiohttp==3.8.2
