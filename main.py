@@ -335,16 +335,26 @@ Use /approve <chatid> [days] and /unapprove <chatid> to manage approvals.
 Enjoy using the bot and happy checking! 🚀''')
 
 async def chk(update: Update, context: CallbackContext) -> None:
-    cc = update.message.text.split(' ')[1]
-    session = manage_session_file()
-    if session:
-        # Send "Please wait" message
-        wait_message = await update.message.reply_text("Please wait ⌛\nProcessing your request...")
-        result = check_credit_cards([cc], session, is_mass=False)
-        # Edit the "Please wait" message with the final response
-        await wait_message.edit_text(result)
-    else:
-        await update.message.reply_text("Failed to create session.")
+    try:
+        # Check if the user provided the required argument
+        if len(context.args) == 0:
+            await update.message.reply_text("Please provide credit card details in the format: /chk <CC|MM|YY|CVV>")
+            return
+
+        # Extract the credit card details
+        cc = context.args[0]
+        session = manage_session_file()
+
+        if session:
+            # Send "Please wait" message
+            wait_message = await update.message.reply_text("Please wait ⌛\nProcessing your request...")
+            result = check_credit_cards([cc], session, is_mass=False)
+            # Edit the "Please wait" message with the final response
+            await wait_message.edit_text(result)
+        else:
+            await update.message.reply_text("Failed to create session.")
+    except Exception as e:
+        await update.message.reply_text(f"An error occurred: {str(e)}")
 
 async def mass(update: Update, context: CallbackContext) -> None:
     chat_id = update.message.chat_id
@@ -403,15 +413,21 @@ async def unapprove(update: Update, context: CallbackContext) -> None:
 async def vbv(update: Update, context: CallbackContext) -> None:
     """Check if a card is enrolled in VBV."""
     try:
-        cc = update.message.text.split(' ')[1]
+        # Check if the user provided the required argument
+        if len(context.args) == 0:
+            await update.message.reply_text("Please provide credit card details in the format: /vbv <CC|MM|YY|CVV>")
+            return
+
+        # Extract the credit card details
+        cc = context.args[0]
         card_details = cc.split('|')
         if len(card_details) != 4:
             await update.message.reply_text("Invalid format. Please use /vbv <CC|MM|YY|CVV>")
             return
-        
+
         card_number = card_details[0]
         vbv_status = check_vbv(card_number)
-        
+
         response = f"""
 ━━━━━━━━━━━━━━━━━━
 
@@ -421,16 +437,23 @@ async def vbv(update: Update, context: CallbackContext) -> None:
 ━━━━━━━━━━━━━━━━━━
 """
         await update.message.reply_text(response)
-    except IndexError:
-        await update.message.reply_text("Please provide card details. Usage: /vbv <CC|MM|YY|CVV>")
+    except Exception as e:
+        await update.message.reply_text(f"An error occurred: {str(e)}")
 
 async def gen(update: Update, context: CallbackContext) -> None:
     """Generate valid credit card numbers."""
     try:
-        bin = update.message.text.split(' ')[1]
+        # Check if the user provided the required argument
+        if len(context.args) == 0:
+            await update.message.reply_text("Please provide a 6-digit BIN. Usage: /gen <6-digit BIN>")
+            return
+
+        # Extract the BIN
+        bin = context.args[0]
         if len(bin) != 6 or not bin.isdigit():
             await update.message.reply_text("Invalid BIN. Please provide a 6-digit BIN.")
             return
+
         ccs = generate_ccs(bin)
         formatted_ccs = "\n".join([f"𝗖𝗮𝗿𝗱 - {cc}" for cc in ccs])
         response = f"""
@@ -440,13 +463,13 @@ async def gen(update: Update, context: CallbackContext) -> None:
 
 {formatted_ccs}  
 
-𝐓𝐨𝐭𝐚𝐥 - 𝟏𝟎 𝐂𝐚𝐫𝐱𝐬  
+𝐓𝐨𝐭𝐚𝐥 - 𝟏𝟎 𝐂𝐚𝐫𝐝𝐬  
 
 ━━━━━━━━━━━━━━━━━━
 """
         await update.message.reply_text(response)
-    except IndexError:
-        await update.message.reply_text("Please provide a BIN. Usage: /gen <6-digit BIN>")
+    except Exception as e:
+        await update.message.reply_text(f"An error occurred: {str(e)}")
 
 def main() -> None:
     application = Application.builder().token(TELEGRAM_TOKEN).build()
@@ -457,7 +480,7 @@ def main() -> None:
     application.add_handler(CommandHandler("approve", approve))
     application.add_handler(CommandHandler("unapprove", unapprove))
     application.add_handler(CommandHandler("vbv", vbv))
-    application.add_handler(CommandHandler("gen", gen))  # Add this line
+    application.add_handler(CommandHandler("gen", gen))
     application.add_handler(MessageHandler(filters.Document.ALL, handle_file))
 
     application.run_polling()
