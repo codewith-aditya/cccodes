@@ -318,7 +318,7 @@ def check_vbv(card_number):
 
 # Telegram Bot Handlers
 async def start(update: Update, context: CallbackContext) -> None:
-    await update.message.reply_text('Welcome to the Ultimate CC Checker Bot!
+    await update.message.reply_text('''Welcome to the Ultimate CC Checker Bot!
 
 ✨ Features:
 • Check a single card using /chk <CC|MM|YY|CVV>
@@ -332,7 +332,7 @@ Only approved users can access the mass checking feature.
 💡 Admin Commands:
 Use /approve <chatid> [days] and /unapprove <chatid> to manage approvals.
 
-Enjoy using the bot and happy checking! 🚀')
+Enjoy using the bot and happy checking! 🚀''')
 
 async def chk(update: Update, context: CallbackContext) -> None:
     cc = update.message.text.split(' ')[1]
@@ -440,7 +440,7 @@ async def gen(update: Update, context: CallbackContext) -> None:
 
 {formatted_ccs}  
 
-𝐓𝐨𝐭𝐚𝐥 - 𝟏𝟎 𝐂𝐚𝐫𝐝𝐬  
+𝐓𝐨𝐭𝐚𝐥 - 𝟏𝟎 𝐂𝐚𝐫𝐱𝐬  
 
 ━━━━━━━━━━━━━━━━━━
 """
